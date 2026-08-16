@@ -291,6 +291,8 @@ def generate_pitch_email(candidate: dict, job_description: str, api_key: str) ->
                 print(f"Warning: Pitch Email model {model_name} failed: {e}. Trying fallback...")
                 last_error = e
         return f"Error generating email: {last_error}"
+    except Exception as e:
+        return f"Error initializing client: {e}"
 
 # UI Render Logic
 if app_mode == "🔍 Recruiter Mode":
