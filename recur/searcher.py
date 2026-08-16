@@ -96,52 +96,71 @@ def execute_search(query: str, tavily_key: str = None, brave_key: str = None, ma
     return search_duckduckgo(query, max_results)
 
 def generate_recruiter_queries(profession: str, skills: List[str], location: str, startup: bool) -> List[str]:
-    """Generates 3-4 targeted search dorks based on recruiter requirements."""
+    """Generates broad, high-yield search dorks to ensure search engines return results."""
     queries = []
     
-    # 1. Primary LinkedIn site query
-    skill_str = " ".join([f'"{s}"' for s in skills[:3]])
-    loc_str = f'"{location}"' if location else ""
-    prof_str = f'"{profession}"' if profession else ""
-    startup_str = '"startup"' if startup else ""
+    # Clean inputs
+    prof_clean = profession.strip() if profession else ""
+    loc_clean = location.strip() if location else ""
+    skills_clean = [s.strip() for s in skills if s.strip()]
     
-    # Query 1: LinkedIn focused search
-    q1 = f"site:linkedin.com/in/ {prof_str} {skill_str} {loc_str} {startup_str}".strip()
-    # Normalize spaces
+    # 1. Broad site search (No strict quotes) - High Yield
+    skills_part = " ".join(skills_clean[:2])
+    q1 = f"site:linkedin.com/in/ {prof_clean} {loc_clean} {skills_part}".strip()
     q1 = " ".join(q1.split())
-    queries.append(q1)
-    
-    # Query 2: GitHub focused search
-    if skills:
-        q2 = f"site:github.com/ {loc_str} {skill_str}".strip()
-        q2 = " ".join(q2.split())
+    if q1:
+        queries.append(q1)
+        
+    # 2. General search with 'linkedin' keyword (Catches indexed profiles outside /in/ or general directories)
+    skills_all = " ".join(skills_clean[:3])
+    startup_part = "startup" if startup else ""
+    q2 = f"linkedin {prof_clean} {loc_clean} {skills_all} {startup_part}".strip()
+    q2 = " ".join(q2.split())
+    if q2:
         queries.append(q2)
         
-    # Query 3: Broader portfolio search
-    q3 = f"{prof_str} {skill_str} {loc_str} {startup_str} portfolio cv".strip()
-    q3 = " ".join(q3.split())
-    queries.append(q3)
-    
-    # Query 4: Alternate LinkedIn search for title variations
-    if profession:
-        q4 = f"site:linkedin.com/in/ {prof_str} {loc_str}".strip()
+    # 3. Base role + location search (Guarantees we get candidates, which we can filter later in code)
+    if prof_clean or loc_clean:
+        q3 = f"site:linkedin.com/in/ {prof_clean} {loc_clean}".strip()
+        q3 = " ".join(q3.split())
+        queries.append(q3)
+        
+    # 4. GitHub site search for developers
+    if skills_clean:
+        q4 = f"site:github.com/ {loc_clean} {skills_clean[0]}".strip()
         q4 = " ".join(q4.split())
         queries.append(q4)
         
-    return list(set(queries))[:3] # Return up to 3 queries to save rate limits
+    # Return unique list, prioritised
+    return list(dict.fromkeys(queries))[:3]
 
 def generate_finder_queries(name: str, company: str = None, college: str = None, profession: str = None) -> List[str]:
-    """Generates targeted search dorks to find a specific person."""
+    """Generates targeted but flexible queries to find a specific person."""
     queries = []
-    name_escaped = f'"{name}"'
+    name_clean = name.strip()
     
-    # Query 1: Direct LinkedIn search
-    q1_terms = [f"site:linkedin.com/in/", name_escaped]
+    # Query 1: Direct LinkedIn site search (Name is unquoted for flexibility)
+    q1 = f"site:linkedin.com/in/ {name_clean}"
     if company:
-        q1_terms.append(f'"{company}"')
+        q1 += f" {company.strip()}"
     if profession:
-        q1_terms.append(f'"{profession}"')
-    queries.append(" ".join(q1_terms))
+        q1 += f" {profession.strip()}"
+    queries.append(q1)
+    
+    # Query 2: General name + LinkedIn/GitHub keyword search
+    q2 = f"{name_clean}"
+    if company:
+        q2 += f" {company.strip()}"
+    if college:
+        q2 += f" {college.strip()}"
+    q2 += " (linkedin OR github OR portfolio)"
+    queries.append(q2)
+    
+    # Query 3: Minimal name search
+    queries.append(f"site:linkedin.com/in/ {name_clean}")
+    
+    return list(dict.fromkeys(queries))
+
     
     # Query 2: Broader web lookup for portfolio/github
     q2_terms = [name_escaped]
