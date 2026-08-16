@@ -63,7 +63,7 @@ def extract_candidates_batch(search_results: List[dict], api_key: str = None) ->
     
     try:
         response = client.models.generate_content(
-            model='gemini-2.0-flash',
+            model='gemini-3.5-flash',
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
