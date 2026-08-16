@@ -278,7 +278,7 @@ def generate_pitch_email(candidate: dict, job_description: str, api_key: str) ->
         5. Provide a strong subject line.
         """
         response = client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-2.0-flash',
             contents=prompt,
             config=types.GenerateContentConfig(temperature=0.7)
         )

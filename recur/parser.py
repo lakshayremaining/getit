@@ -48,7 +48,7 @@ def parse_user_query(query: str, api_key: str = None) -> ParsedResult:
     """
     
     response = client.models.generate_content(
-        model='gemini-1.5-flash',
+        model='gemini-2.0-flash',
         contents=prompt,
         config=types.GenerateContentConfig(
             response_mime_type="application/json",
