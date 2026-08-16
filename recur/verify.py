@@ -13,7 +13,7 @@ def test_database():
         set_cached_search(query, results)
         retrieved = get_cached_search(query)
         assert retrieved == results, "Search cache mismatch"
-        print("      ✓ Search Cache read/write successful.")
+        print("      [OK] Search Cache read/write successful.")
         
         # Test Profile Cache
         url = "https://linkedin.com/in/test-person"
@@ -21,11 +21,11 @@ def test_database():
         set_cached_profile(url, data)
         retrieved_prof = get_cached_profile(url)
         assert retrieved_prof == data, "Profile cache mismatch"
-        print("      ✓ Profile Cache read/write successful.")
+        print("      [OK] Profile Cache read/write successful.")
         
         return True
     except Exception as e:
-        print(f"      ✗ Database Test Failed: {e}")
+        print(f"      [FAIL] Database Test Failed: {e}")
         return False
 
 def test_queries():
@@ -37,17 +37,17 @@ def test_queries():
         source_qs = generate_recruiter_queries("ML Engineer", ["Python", "PyTorch"], "Bangalore", True)
         assert len(source_qs) > 0, "No recruiter queries generated"
         assert any("linkedin.com" in q for q in source_qs), "LinkedIn dork missing in sourcing"
-        print("      ✓ Sourcing dorks generated successfully.")
+        print("      [OK] Sourcing dorks generated successfully.")
         
         # Finder queries
         finder_qs = generate_finder_queries("Rahul Sharma", "Google", "IIT", "Engineer")
         assert len(finder_qs) > 0, "No finder queries generated"
         assert any("Google" in q for q in finder_qs), "Company keyword missing in finder dorks"
-        print("      ✓ Finder dorks generated successfully.")
+        print("      [OK] Finder dorks generated successfully.")
         
         return True
     except Exception as e:
-        print(f"      ✗ Query Generator Test Failed: {e}")
+        print(f"      [FAIL] Query Generator Test Failed: {e}")
         return False
 
 def test_ranker():
@@ -58,7 +58,7 @@ def test_ranker():
         # Test semantic similarity helper
         sim = get_similarity("Machine Learning Engineer", "ML Engineer")
         assert sim > 0.5, f"Semantic similarity between 'Machine Learning Engineer' and 'ML Engineer' is too low: {sim}"
-        print(f"      ✓ Semantic similarity verified (sim = {sim:.2f})")
+        print(f"      [OK] Semantic similarity verified (sim = {sim:.2f})")
         
         # Test candidate scoring weights
         reqs = {
@@ -79,18 +79,18 @@ def test_ranker():
         }
         scored = score_candidate(candidate, reqs)
         assert scored["match_score"] > 80, f"Match score should be high, got {scored['match_score']}%"
-        print(f"      ✓ Candidate scoring verified (score = {scored['match_score']}%)")
+        print(f"      [OK] Candidate scoring verified (score = {scored['match_score']}%)")
         
         return True
     except Exception as e:
-        print(f"      ✗ Ranking Engine Test Failed: {e}")
+        print(f"      [FAIL] Ranking Engine Test Failed: {e}")
         return False
 
 def test_gemini_parser():
     print("[4/4] Checking Gemini API Credentials...")
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        print("      ⚠ Skipping parser test: GEMINI_API_KEY environment variable is not set.")
+        print("      [WARN] Skipping parser test: GEMINI_API_KEY environment variable is not set.")
         return True
         
     try:
@@ -98,10 +98,10 @@ def test_gemini_parser():
         res = parse_user_query("I need 3 Java developers in Delhi", api_key=api_key)
         assert res.mode == "recruiter", "Failed to parse mode correct"
         assert "Java" in res.recruiter_data.skills, "Failed to parse skills correct"
-        print("      ✓ Gemini API integration and parser verified successfully.")
+        print("      [OK] Gemini API integration and parser verified successfully.")
         return True
     except Exception as e:
-        print(f"      ✗ Gemini Parser Failed: {e}")
+        print(f"      [FAIL] Gemini Parser Failed: {e}")
         return False
 
 if __name__ == "__main__":
@@ -116,8 +116,8 @@ if __name__ == "__main__":
     
     print("=" * 45)
     if db_ok and queries_ok and ranker_ok and gemini_ok:
-        print("🎉 ALL COMPONENT TESTS PASSED SUCCESSFULLY!")
+        print("[SUCCESS] ALL COMPONENT TESTS PASSED SUCCESSFULLY!")
         sys.exit(0)
     else:
-        print("❌ SOME COMPONENT TESTS FAILED. PLEASE REVIEW LOGS.")
+        print("[FAILED] SOME COMPONENT TESTS FAILED. PLEASE REVIEW LOGS.")
         sys.exit(1)

@@ -62,26 +62,33 @@ def extract_candidates_batch(search_results: List[dict], api_key: str = None) ->
     For fields that are not mentioned, set them to null/None. For Name, use 'Not verified' if not present.
     """
     
-    try:
-        response = client.models.generate_content(
-            model='gemini-3.5-flash',
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=CandidateListDetails,
-                temperature=0.1
+    models_to_try = ['gemini-3.5-flash', 'gemini-3.1-flash-lite']
+    last_error = None
+    
+    for model_name in models_to_try:
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=CandidateListDetails,
+                    temperature=0.1
+                )
             )
-        )
-        
-        parsed_data = json.loads(response.text)
-        candidates_raw = parsed_data.get("candidates", [])
-        
-        # Filter only valid persons
-        valid_candidates = [c for c in candidates_raw if c.get("is_valid_person", False)]
-        return valid_candidates
-    except Exception as e:
-        print(f"Error during batch profile extraction: {e}")
-        return []
+            
+            parsed_data = json.loads(response.text)
+            candidates_raw = parsed_data.get("candidates", [])
+            
+            # Filter only valid persons
+            valid_candidates = [c for c in candidates_raw if c.get("is_valid_person", False)]
+            return valid_candidates
+        except Exception as e:
+            print(f"Warning: Extractor failed with model {model_name}: {e}. Trying fallback...")
+            last_error = e
+            
+    print(f"Error during batch profile extraction: {last_error}")
+    return []
 
 if __name__ == "__main__":
     # Test batch extraction

@@ -277,14 +277,20 @@ def generate_pitch_email(candidate: dict, job_description: str, api_key: str) ->
         4. Provide placeholders for recruiter name/contact.
         5. Provide a strong subject line.
         """
-        response = client.models.generate_content(
-            model='gemini-3.5-flash',
-            contents=prompt,
-            config=types.GenerateContentConfig(temperature=0.7)
-        )
-        return response.text
-    except Exception as e:
-        return f"Error generating email: {e}"
+        models_to_try = ['gemini-3.5-flash', 'gemini-3.1-flash-lite']
+        last_error = None
+        for model_name in models_to_try:
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(temperature=0.7)
+                )
+                return response.text
+            except Exception as e:
+                print(f"Warning: Pitch Email model {model_name} failed: {e}. Trying fallback...")
+                last_error = e
+        return f"Error generating email: {last_error}"
 
 # UI Render Logic
 if app_mode == "🔍 Recruiter Mode":

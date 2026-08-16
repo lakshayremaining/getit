@@ -123,12 +123,12 @@ def score_candidate(candidate: Dict[str, Any], requirements: Dict[str, Any]) -> 
 
     # 5. Startup Experience Match (10%)
     req_startup = requirements.get("startup_experience", False)
-    cand_evidence = (candidate.get("evidence", "") + " " + str(candidate.get("profession", ""))).lower()
+    cand_evidence = (str(candidate.get("evidence") or "") + " " + str(candidate.get("profession") or "")).lower()
     
     startup_score = 1.0
     if req_startup:
         # Check if startup is mentioned in the evidence, title, or skills
-        if "startup" in cand_evidence or "start-up" in cand_evidence or candidate.get("industry", "").lower() == "startup":
+        if "startup" in cand_evidence or "start-up" in cand_evidence or (candidate.get("industry") or "").lower() == "startup":
             startup_score = 1.0
         else:
             startup_score = 0.0
@@ -146,7 +146,7 @@ def score_candidate(candidate: Dict[str, Any], requirements: Dict[str, Any]) -> 
 
     # 7. Industry / Company Match (5%)
     req_company = requirements.get("company_industry")
-    cand_comp = (candidate.get("company", "") or "") + " " + (candidate.get("industry", "") or "")
+    cand_comp = str(candidate.get("company") or "") + " " + str(candidate.get("industry") or "")
     comp_score = 1.0
     if req_company and cand_comp.strip():
         comp_score = get_similarity(req_company, cand_comp)

@@ -47,19 +47,28 @@ def parse_user_query(query: str, api_key: str = None) -> ParsedResult:
     Then extract all relevant parameters and return them according to the schema.
     """
     
-    response = client.models.generate_content(
-        model='gemini-3.5-flash',
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=ParsedResult,
-            temperature=0.1
-        )
-    )
+    models_to_try = ['gemini-3.5-flash', 'gemini-3.1-flash-lite']
+    last_error = None
     
-    # Parse the response text as a dict and load it into our Pydantic model
-    data = json.loads(response.text)
-    return ParsedResult(**data)
+    for model_name in models_to_try:
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=ParsedResult,
+                    temperature=0.1
+                )
+            )
+            # Parse the response text as a dict and load it into our Pydantic model
+            data = json.loads(response.text)
+            return ParsedResult(**data)
+        except Exception as e:
+            print(f"Warning: Model {model_name} failed: {e}. Trying fallback...")
+            last_error = e
+            
+    raise last_error
 
 if __name__ == "__main__":
     # Test block
