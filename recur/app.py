@@ -364,10 +364,12 @@ if app_mode == "🔍 Recruiter Mode":
                 progress_bar.progress(40)
                 
                 candidates_pool = []
+                logs = []
                 
                 if demo_mode:
                     time.sleep(1) # Fake delay
                     candidates_pool = MOCK_CANDIDATES
+                    logs.append("Running in Mock Demo Mode: Loaded pre-configured mock database of candidate profiles.")
                 else:
                     # Generate search queries
                     queries = generate_recruiter_queries(
@@ -376,6 +378,7 @@ if app_mode == "🔍 Recruiter Mode":
                         location=r_data.location,
                         startup=r_data.startup_experience
                     )
+                    logs.append(f"Generated search queries: {queries}")
                     
                     search_results = []
                     for q in queries:
@@ -383,10 +386,12 @@ if app_mode == "🔍 Recruiter Mode":
                         cached = get_cached_search(q)
                         if cached:
                             search_results.extend(cached)
+                            logs.append(f"Query '{q}': Sourced {len(cached)} cached results.")
                         else:
                             fetched = execute_search(q, tavily_key, brave_key, max_results=8)
                             set_cached_search(q, fetched)
                             search_results.extend(fetched)
+                            logs.append(f"Query '{q}': Sourced {len(fetched)} live results from web.")
                     
                     # Deduplicate search results by URL
                     seen_urls = set()
@@ -395,6 +400,7 @@ if app_mode == "🔍 Recruiter Mode":
                         if r["url"] not in seen_urls:
                             seen_urls.add(r["url"])
                             unique_search_results.append(r)
+                    logs.append(f"Deduplicated results: {len(unique_search_results)} unique profile URLs found.")
                             
                     # Phase 3: Extraction & Normalization (70%)
                     status_text.markdown("🧹 **Phase 3:** Extracting professional data from search results...")
@@ -402,16 +408,21 @@ if app_mode == "🔍 Recruiter Mode":
                     
                     # Check cached profiles first
                     uncached_results = []
+                    cached_count = 0
                     for r in unique_search_results:
                         cached_prof = get_cached_profile(r["url"])
                         if cached_prof:
                             candidates_pool.append(cached_prof)
+                            cached_count += 1
                         else:
                             uncached_results.append(r)
+                    logs.append(f"Profiles loaded from SQLite cache: {cached_count}")
+                    logs.append(f"New profiles to parse using Gemini API: {len(uncached_results)}")
                             
                     # Batch extract remaining uncached profiles (max 8 at once to be safe with rate limits)
                     if uncached_results:
                         batch_extracted = extract_candidates_batch(uncached_results[:8], gemini_key)
+                        logs.append(f"Gemini API extracted {len(batch_extracted)} valid candidate profiles.")
                         for cand in batch_extracted:
                             set_cached_profile(cand["source_url"], cand)
                             candidates_pool.append(cand)
@@ -435,6 +446,14 @@ if app_mode == "🔍 Recruiter Mode":
                 
                 # Render results in UI
                 st.write(f"## Found {len(ranked_candidates)} Matching Profiles")
+                
+                # Diagnostics Log Expander
+                with st.expander("🛠️ Sourcing Pipeline Diagnostics Log"):
+                    for log in logs:
+                        st.write(f"- {log}")
+                    if not demo_mode and len(unique_search_results) == 0:
+                        st.error("⚠️ **Troubleshooting Rate Limits:** Search engines returned 0 results. DuckDuckGo often blocks automated queries from cloud-hosting datacenter IPs. For stable production, please add a free **Tavily Search API Key** (1,000 free searches/month) in the sidebar or secrets.")
+
                 
                 # Quick filters in UI
                 col_f1, col_f2 = st.columns(2)

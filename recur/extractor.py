@@ -54,8 +54,9 @@ def extract_candidates_batch(search_results: List[dict], api_key: str = None) ->
     
     {"".join(formatted_results)}
     
-    For each Result ID, extract the candidate's professional details and set 'is_valid_person' to True ONLY if it represents a single, identifiable individual's profile.
-    If the snippet is a company directory page, job post, news article, or irrelevant page, set 'is_valid_person' to False.
+    For each Result ID, extract the candidate's professional details.
+    Set 'is_valid_person' to True if the result represents or describes a specific individual's professional profile (e.g. contains a name, title, skills, or bio info).
+    Only set 'is_valid_person' to False if the page is clearly a company landing page, a job posting board, a list of profiles, or a general news article. Be lenient: if there is any indication of an individual's career details, mark it as True.
     
     Return the parsed list of candidates. Ensure name, job titles, and location fields are cleaned and normalized.
     For fields that are not mentioned, set them to null/None. For Name, use 'Not verified' if not present.

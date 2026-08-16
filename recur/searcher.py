@@ -96,70 +96,70 @@ def execute_search(query: str, tavily_key: str = None, brave_key: str = None, ma
     return search_duckduckgo(query, max_results)
 
 def generate_recruiter_queries(profession: str, skills: List[str], location: str, startup: bool) -> List[str]:
-    """Generates broad, high-yield search dorks to ensure search engines return results."""
+    """
+    Generates 5 broad, high-yield queries spanning the entire web:
+    LinkedIn profiles, GitHub repositories, about.me directory, online portfolios, and resumes.
+    """
     queries = []
     
-    # Clean inputs
     prof_clean = profession.strip() if profession else ""
     loc_clean = location.strip() if location else ""
     skills_clean = [s.strip() for s in skills if s.strip()]
-    
-    # 1. Broad site search (No strict quotes) - High Yield
-    skills_part = " ".join(skills_clean[:2])
-    q1 = f"site:linkedin.com/in/ {prof_clean} {loc_clean} {skills_part}".strip()
-    q1 = " ".join(q1.split())
-    if q1:
-        queries.append(q1)
-        
-    # 2. General search with 'linkedin' keyword (Catches indexed profiles outside /in/ or general directories)
-    skills_all = " ".join(skills_clean[:3])
+    skills_str = " ".join(skills_clean[:2])
     startup_part = "startup" if startup else ""
-    q2 = f"linkedin {prof_clean} {loc_clean} {skills_all} {startup_part}".strip()
-    q2 = " ".join(q2.split())
-    if q2:
-        queries.append(q2)
-        
-    # 3. Base role + location search (Guarantees we get candidates, which we can filter later in code)
-    if prof_clean or loc_clean:
-        q3 = f"site:linkedin.com/in/ {prof_clean} {loc_clean}".strip()
-        q3 = " ".join(q3.split())
-        queries.append(q3)
-        
-    # 4. GitHub site search for developers
+    
+    # Query 1: LinkedIn Public Profiles (Broad)
+    q1 = f"site:linkedin.com/in/ {prof_clean} {loc_clean} {skills_str}".strip()
+    queries.append(" ".join(q1.split()))
+    
+    # Query 2: GitHub Profiles/Activity
     if skills_clean:
-        q4 = f"site:github.com/ {loc_clean} {skills_clean[0]}".strip()
-        q4 = " ".join(q4.split())
-        queries.append(q4)
+        q2 = f"site:github.com/ {loc_clean} {skills_clean[0]} {prof_clean}".strip()
+        queries.append(" ".join(q2.split()))
         
-    # Return unique list, prioritised
-    return list(dict.fromkeys(queries))[:3]
+    # Query 3: Personal Portfolios & Professional Websites (Whole Web)
+    q3 = f"{prof_clean} {loc_clean} {skills_str} {startup_part} (portfolio OR \"personal website\")".strip()
+    queries.append(" ".join(q3.split()))
+    
+    # Query 4: Online Resumes / CVs (Whole Web)
+    q4 = f"{prof_clean} {loc_clean} {skills_str} (cv OR resume OR bio)".strip()
+    queries.append(" ".join(q4.split()))
+    
+    # Query 5: Directory & alternative networks (about.me, dev.to, medium, etc.)
+    q5 = f"(site:about.me OR site:dev.to) {prof_clean} {loc_clean} {skills_str}".strip()
+    queries.append(" ".join(q5.split()))
+    
+    # Remove empty queries and deduplicate
+    final_queries = [q for q in queries if q]
+    return list(dict.fromkeys(final_queries))[:5]
 
 def generate_finder_queries(name: str, company: str = None, college: str = None, profession: str = None) -> List[str]:
-    """Generates targeted but flexible queries to find a specific person."""
+    """Generates comprehensive queries to find a specific person across the entire internet."""
     queries = []
     name_clean = name.strip()
     
-    # Query 1: Direct LinkedIn site search (Name is unquoted for flexibility)
+    # 1. LinkedIn profile
     q1 = f"site:linkedin.com/in/ {name_clean}"
-    if company:
-        q1 += f" {company.strip()}"
-    if profession:
-        q1 += f" {profession.strip()}"
+    if company: q1 += f" {company.strip()}"
     queries.append(q1)
     
-    # Query 2: General name + LinkedIn/GitHub keyword search
-    q2 = f"{name_clean}"
-    if company:
-        q2 += f" {company.strip()}"
-    if college:
-        q2 += f" {college.strip()}"
-    q2 += " (linkedin OR github OR portfolio)"
+    # 2. General web (Portfolios, GitHub, Twitter)
+    q2 = f"{name_clean} (site:github.com OR site:twitter.com OR portfolio OR cv)"
+    if company: q2 += f" {company.strip()}"
+    if college: q2 += f" {college.strip()}"
     queries.append(q2)
     
-    # Query 3: Minimal name search
-    queries.append(f"site:linkedin.com/in/ {name_clean}")
+    # 3. Alternative professional networks (about.me, researchGate, dev.to)
+    q3 = f"{name_clean} {profession.strip() if profession else ''} (site:about.me OR site:researchgate.net OR site:dev.to)"
+    queries.append(q3)
     
-    return list(dict.fromkeys(queries))
+    # 4. Global generic search
+    q4 = f"\"{name_clean}\" {company.strip() if company else ''} {profession.strip() if profession else ''}"
+    queries.append(q4.strip())
+    
+    final_queries = [q for q in queries if q]
+    return list(dict.fromkeys(final_queries))
+
 
     
     # Query 2: Broader web lookup for portfolio/github
