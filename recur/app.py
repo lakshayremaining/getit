@@ -203,16 +203,45 @@ app_mode = st.sidebar.radio(
     help="Recruiter Mode is for talent sourcing and candidate ranking. People Finder is for looking up specific individuals to fetch their social footprints."
 )
 
-# API Keys Section
+# API Keys Section & Caching checks
 st.sidebar.markdown("---")
 st.sidebar.markdown("### API Credentials")
-gemini_key = st.sidebar.text_input("Gemini API Key", type="password", value=os.environ.get("GEMINI_API_KEY", ""))
-tavily_key = st.sidebar.text_input("Tavily API Key (Optional)", type="password", value=os.environ.get("TAVILY_API_KEY", ""))
-brave_key = st.sidebar.text_input("Brave API Key (Optional)", type="password", value=os.environ.get("BRAVE_API_KEY", ""))
 
-# Demo Mode Toggle
+# Pre-load keys from environment/secrets
+env_gemini = os.environ.get("GEMINI_API_KEY", "")
+env_tavily = os.environ.get("TAVILY_API_KEY", "")
+env_brave = os.environ.get("BRAVE_API_KEY", "")
+
+gemini_key = env_gemini
+tavily_key = env_tavily
+brave_key = env_brave
+
+# UI representation: Hide if already in secrets
+if env_gemini:
+    st.sidebar.success("⚡ Gemini API: Active (System)")
+    if env_tavily:
+        st.sidebar.success("🔍 Search API: Active (Tavily)")
+    elif env_brave:
+        st.sidebar.success("🔍 Search API: Active (Brave)")
+    else:
+        st.sidebar.info("🌐 Search: DuckDuckGo Active")
+        
+    with st.sidebar.expander("Override System API Keys"):
+        override_gemini = st.text_input("Override Gemini Key", type="password", value="")
+        override_tavily = st.text_input("Override Tavily Key", type="password", value="")
+        override_brave = st.text_input("Override Brave Key", type="password", value="")
+        if override_gemini: gemini_key = override_gemini
+        if override_tavily: tavily_key = override_tavily
+        if override_brave: brave_key = override_brave
+else:
+    gemini_key = st.sidebar.text_input("Gemini API Key", type="password", value="", help="Provide your free Google AI Studio key.")
+    tavily_key = st.sidebar.text_input("Tavily API Key (Optional)", type="password", value="")
+    brave_key = st.sidebar.text_input("Brave API Key (Optional)", type="password", value="")
+
+# Demo Mode Toggle (automatically false if system key is active, unless toggled)
 demo_mode = st.sidebar.toggle("Use Mock Demo Mode", value=not bool(gemini_key), 
                              help="Enables searching within a preloaded database of candidates. Perfect for testing without active API keys.")
+
 
 st.sidebar.markdown("---")
 st.sidebar.info(
